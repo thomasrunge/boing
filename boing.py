@@ -7,6 +7,7 @@ import struct
 import sys
 import tempfile
 from pygame.surface import Surface
+from typing import List, Tuple
 
 # boing.py written by Thomas Runge (tom@truwo.de) in January 2016
 #
@@ -474,36 +475,37 @@ class Ball(pygame.Surface):
 
         self.endianness_little = (sys.byteorder == 'little')
         self.sound = sound
-        self.color_cycle=2
-        self.x_pos=0
-        self.y_pos=0
-        self.x_scroll=1
-        self.y_scroll=-1
+        self.color_cycle = 2
+        self.x_pos = 0
+        self.y_pos = 0
+        self.x_scroll = 1
+        self.y_scroll = -1
 
         pygame.Surface.__init__(self, (BALL_WIDTH, BALL_HEIGHT), depth=8)
         self.set_colorkey(0)
 
         # lets construct pygames chunky image from Amigas planar data
         pxarray = pygame.PixelArray(self)
-        oneplanelen = BALL_WIDTH*BALL_HEIGHT/16
+        oneplanelen = BALL_WIDTH * BALL_HEIGHT // 16
         for y in range(BALL_HEIGHT):
             for x in range(BALL_WIDTH):
-                pos = y*BALL_WIDTH+x
-                offset = int(pos/16)
-                bitpos = pos-16*offset
+                pos = y * BALL_WIDTH + x
+                offset = pos // 16
+                bitpos = pos - 16 * offset
                 for plane in range(4):
-                    value = self.orderbits(ball_bitplanes[offset+plane*oneplanelen])
+                    value = self.orderbits(ball_bitplanes[offset + plane * oneplanelen])
                     if value & (1 << bitpos):
                         pxarray[x][y] += 1 << plane
         del pxarray
 
     # the world of today is full of little endianness, while the Amiga was big
-    def orderbits(self, value):
+    def orderbits(self, value: int) -> int:
         # completely rotate bitmask
         if self.endianness_little:
             result = 0
-            for i in xrange(16):
-                if (value >> i) & 1: result |= 1 << (16 - 1 - i)
+            for i in range(16):
+                if (value >> i) & 1:
+                    result |= 1 << (16 - 1 - i)
             return result
         return value
 
@@ -575,7 +577,7 @@ class Ball(pygame.Surface):
                 else:
                     adjusted_y_scroll*=4
 
-        self.y_pos+=adjusted_y_scroll;
+        self.y_pos+=adjusted_y_scroll
         # Check to see whether we've reached the top or bottom of the bounce.
         if self.y_pos<=-100 or self.y_pos>=0:
             self.y_scroll=-self.y_scroll
@@ -622,29 +624,27 @@ class Icon(pygame.Surface):
         self.set_palette(ColorTable)
         self.set_colorkey(0)
 
-class Sound():
-    def __init__(self, samplefile):
+class Sound:
+    def __init__(self, samplefile: str):
         if samplefile.lower().endswith(".wav"):
             self.sound = pygame.mixer.Sound(samplefile)
         else:
             # put Amigas signed-integer, 8bit, 28867Hz sample rate raw audio
             # into a wav file format, as pygame supports no raw audio
-            fp = open(samplefile, "rb")
-            raw = bytearray(fp.read())
-            fp.close()
+            with open(samplefile, "rb") as fp:
+                raw = bytearray(fp.read())
             for offset in range(len(raw)):
                 raw_signed_bytes = struct.unpack_from(">b", raw, offset)
                 struct.pack_into("<B", raw, offset, raw_signed_bytes[0]+128)
-            wav = struct.pack('<4sL4s4sLHHLLHH4sL', 'RIFF',
-                    36 + len(raw), 'WAVE', 'fmt ', 16,
-                    0x0001, 1, 28867, 28867, 1, 8, 'data', len(raw))
+            wav = struct.pack('<4sL4s4sLHHLLHH4sL', b'RIFF',
+                    36 + len(raw), b'WAVE', b'fmt ', 16,
+                    0x0001, 1, 28867, 28867, 1, 8, b'data', len(raw))
             wav += raw
             # write wav file to a temporary file, couldn't get in-memory
             # feeding to pygame working
             p,name = tempfile.mkstemp()
-            fp = os.fdopen(p, "wb")
-            fp.write(wav)
-            fp.close()
+            with os.fdopen(p, "wb") as fp:
+                fp.write(wav)
             self.sound = pygame.mixer.Sound(name)
             os.remove(name)
         self.channel = pygame.mixer.find_channel()
@@ -665,8 +665,7 @@ def main():
     ball = Ball(sound)
     icon = Icon(ball)
     background = Background()
-    screen = pygame.display.set_mode((320, 200), pygame.locals.HWSURFACE|pygame.locals.HWPALETTE, 8)
-    screen.set_palette(ColorTable)
+    screen = pygame.display.set_mode((320, 200), pygame.HWSURFACE | pygame.HWPALETTE, 8)
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
 
