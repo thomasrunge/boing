@@ -599,7 +599,7 @@ class Background(pygame.Surface):
     def __init__(self):
         pygame.Surface.__init__(self, (320, 200), depth=8)
         self.set_palette(ColorTable)
-        linecolor = ColorTable[1]
+        linecolor = ColorTable[16]
         for j in range(48, 300, 16):
             pygame.draw.line(self, linecolor, [j, 0], [j, 192], 1)
         for j in range(0, 200, 16):
