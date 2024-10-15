@@ -492,6 +492,22 @@ class Ball(pygame.Surface):
                     value = self.orderbits(ball_bitplanes[offset + plane * oneplanelen])
                     if value & (1 << bitpos):
                         pxarray[x][y] += 1 << plane
+
+        # fake the shadow
+        self.shadow = pygame.Surface((BALL_WIDTH, BALL_HEIGHT), depth=8)
+        self.shadow.set_colorkey(0)
+        self.shadow.set_palette_at(0, (0x00, 0x00, 0x00))
+        self.shadow.set_palette_at(1, ColorTable[1])
+        new_pixels = pygame.PixelArray(self.shadow)
+        for y in range(BALL_HEIGHT):
+            for x in range(BALL_WIDTH):
+                if pxarray[x, y] == 1:  # shadow color
+                    new_pixels[x][y] = 1
+                    pxarray[x, y] = 0
+                else:
+                    new_pixels[x][y] = 0  # set to transparent
+        del new_pixels
+
         del pxarray
 
     # the world of today is full of little endianness, while the Amiga was big
@@ -616,6 +632,7 @@ class Icon(pygame.Surface):
         pygame.Surface.__init__(self, (32, 32), depth=8)
         timg = pygame.Surface((144, 144), depth=8)
         timg.blit(ball, (0, 22))
+        timg.blit(ball.shadow, (0, 22), special_flags=pygame.BLEND_RGB_ADD)
         pygame.transform.scale(timg, (32, 32), self)
         self.set_palette(ColorTable)
         self.set_colorkey(0)
@@ -658,7 +675,7 @@ def main():
     ball = Ball(sound)
     icon = Icon(ball)
     background = Background()
-    screen = pygame.display.set_mode((320, 200), pygame.HWSURFACE | pygame.HWPALETTE | pygame.DOUBLEBUF, 8)
+    screen = pygame.display.set_mode((320, 200), 8)
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
 
@@ -670,10 +687,12 @@ def main():
         ball.step()
         screen.blit(background, (0, 0))
         screen.blit(ball, ball.get_position())
+        screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
         pygame.display.flip()
         pygame.time.delay(20)
 
     pygame.mixer.quit()
+    pygame.quit()
 
 
 if __name__ == '__main__':
