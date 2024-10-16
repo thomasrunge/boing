@@ -2,8 +2,11 @@
 
 import io
 import pygame
+import random
 import struct
 import sys
+from enum import Enum, auto
+
 
 # boing.py written by Thomas Runge (tom@truwo.de) in January 2016
 #
@@ -669,13 +672,64 @@ class Sound:
             self.channel.set_volume(left, right)
 
 
+class Workbench:
+    class State(Enum):
+        FULL_UP = auto()
+        FULL_DOWN = auto()
+        SHOWING_HALFSCREEN = auto()
+        DRAGGING_DOWN = auto()
+        DRAGGING_UP = auto()
+
+    def __init__(self):
+        self.wb = pygame.image.load('wb.png')
+        self.state = self.State.FULL_UP
+        self.countdown = 100
+        self.height_half = 100
+        self.height = 200
+
+    def update(self, screen):
+        if self.countdown > 0:
+            self.countdown -= 1
+
+        if self.countdown == 0:
+            match self.state:
+                case self.State.FULL_UP:
+                    self.state = self.State.DRAGGING_DOWN
+                case self.State.SHOWING_HALFSCREEN:
+                    self.state = self.State.DRAGGING_DOWN
+                    self.countdown = 100
+                case self.State.FULL_DOWN:
+                    self.state = self.State.DRAGGING_UP
+                    self.height_half = random.randint(50, 150)
+                    self.countdown = 100
+                case self.State.DRAGGING_DOWN:
+                    self.height -= 2
+                    if self.height <= 0:
+                        self.state = self.State.FULL_DOWN
+                        self.countdown = random.randint(500, 2000)
+                    if self.height == self.height_half:
+                        self.state = self.State.SHOWING_HALFSCREEN
+                        self.countdown = 100
+                case self.State.DRAGGING_UP:
+                    self.height += 2
+                    if self.height >= self.height_half:
+                        self.state = self.State.DRAGGING_DOWN
+                        self.countdown = 100
+
+        if self.height > 0:
+            screen.blit(self.wb, (0, 200-self.height))
+
+
 def main():
     pygame.init()
     sound = Sound("boing.samples")
     ball = Ball(sound)
     icon = Icon(ball)
     background = Background()
-    screen = pygame.display.set_mode((320, 200), 8)
+    wb = Workbench()
+
+    flags = 0  # pygame.FULLSCREEN | pygame.SCALED
+    screen = pygame.display.set_mode(size=(320, 200), depth=8, flags=flags)
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
 
@@ -688,6 +742,7 @@ def main():
         screen.blit(background, (0, 0))
         screen.blit(ball, ball.get_position())
         screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
+        wb.update(screen)
         pygame.display.flip()
         pygame.time.delay(20)
 
