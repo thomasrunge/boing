@@ -632,13 +632,11 @@ class Background(pygame.Surface):
 
 class Icon(pygame.Surface):
     def __init__(self, ball):
-        pygame.Surface.__init__(self, (32, 32))
+        pygame.Surface.__init__(self, (32, 32), depth=8)
+        self.set_palette(ColorTable)
         self.set_colorkey(0)
-        self.timg = pygame.Surface((144, 144))
+        self.timg = pygame.Surface((144, 144), depth=8)
         self.timg.blit(ball.shadow, (0, 22))
-        self.update(ball)
-
-    def update(self, ball):
         self.timg.blit(ball, (0, 22))
         pygame.transform.scale(self.timg, (32, 32), self)
 
@@ -752,18 +750,18 @@ def main():
                     else:
                         screen = pygame.display.set_mode(size=(320, 200))
                         pygame.display.set_caption('Boing')
+                        pygame.display.set_icon(icon)
                 case pygame.K_w:
                     wb.countdown = 0
                 case pygame.K_ESCAPE:
+                    break
+                case pygame.K_q:
                     break
         ball.step()
         screen.blit(background, (0, 0))
         screen.blit(ball, ball.get_position())
         screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
         wb.update(screen)
-        if not fullscreen:
-            icon.update(ball)
-            pygame.display.set_icon(icon)
         pygame.display.flip()
         pygame.time.delay(20)
 
