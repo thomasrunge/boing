@@ -632,13 +632,16 @@ class Background(pygame.Surface):
 
 class Icon(pygame.Surface):
     def __init__(self, ball):
-        pygame.Surface.__init__(self, (32, 32), depth=8)
-        timg = pygame.Surface((144, 144), depth=8)
-        timg.blit(ball, (0, 22))
-        timg.blit(ball.shadow, (0, 22), special_flags=pygame.BLEND_RGB_ADD)
-        pygame.transform.scale(timg, (32, 32), self)
-        self.set_palette(ColorTable)
+        pygame.Surface.__init__(self, (32, 32))
         self.set_colorkey(0)
+        self.timg = pygame.Surface((144, 144))
+        self.timg.blit(ball.shadow, (0, 22))
+        self.update(ball)
+
+    def update(self, ball):
+        self.timg.blit(ball, (0, 22))
+        pygame.transform.scale(self.timg, (32, 32), self)
+
 
 class Sound:
     def __init__(self, samplefile: str):
@@ -728,21 +731,39 @@ def main():
     background = Background()
     wb = Workbench()
 
-    flags = 0  # pygame.FULLSCREEN | pygame.SCALED
-    screen = pygame.display.set_mode(size=(320, 200), depth=8, flags=flags)
+    screen = pygame.display.set_mode(size=(320, 200))
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
 
-    showstoppers = pygame.QUIT, pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN
+    fullscreen = False
+
     while True:
         evt = pygame.event.poll()
-        if evt.type in showstoppers:
+        if evt.type in (pygame.QUIT, pygame.MOUSEBUTTONDOWN):
             break
+        elif evt.type == pygame.KEYDOWN:
+            match evt.key:
+                case pygame.K_F11:
+                    pygame.display.quit()
+                    pygame.display.init()
+                    fullscreen = not fullscreen
+                    if fullscreen:
+                        screen = pygame.display.set_mode(size=(320, 200), flags=pygame.FULLSCREEN | pygame.SCALED)
+                    else:
+                        screen = pygame.display.set_mode(size=(320, 200))
+                        pygame.display.set_caption('Boing')
+                case pygame.K_w:
+                    wb.countdown = 0
+                case pygame.K_ESCAPE:
+                    break
         ball.step()
         screen.blit(background, (0, 0))
         screen.blit(ball, ball.get_position())
         screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
         wb.update(screen)
+        if not fullscreen:
+            icon.update(ball)
+            pygame.display.set_icon(icon)
         pygame.display.flip()
         pygame.time.delay(20)
 
