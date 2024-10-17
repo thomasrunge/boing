@@ -729,15 +729,20 @@ def main():
     background = Background()
     wb = Workbench()
 
+    cursor_img = pygame.image.load("cursor.png")
+    cursor = pygame.cursors.Cursor((0, 0), cursor_img)
+
     screen = pygame.display.set_mode(size=(320, 200))
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
+    pygame.mouse.set_cursor(cursor)
 
     fullscreen = False
 
     while True:
+        ticks1 = pygame.time.get_ticks()
         evt = pygame.event.poll()
-        if evt.type in (pygame.QUIT, pygame.MOUSEBUTTONDOWN):
+        if evt.type == pygame.QUIT:
             break
         elif evt.type == pygame.KEYDOWN:
             match evt.key:
@@ -751,6 +756,7 @@ def main():
                         screen = pygame.display.set_mode(size=(320, 200))
                         pygame.display.set_caption('Boing')
                         pygame.display.set_icon(icon)
+                    pygame.mouse.set_cursor(cursor)
                 case pygame.K_w:
                     wb.countdown = 0
                 case pygame.K_ESCAPE:
@@ -763,7 +769,9 @@ def main():
         screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
         wb.update(screen)
         pygame.display.flip()
-        pygame.time.delay(20)
+
+        ticks2 = pygame.time.get_ticks()
+        pygame.time.wait(max(0, 20 - (ticks2 - ticks1)))
 
     pygame.mixer.quit()
     pygame.quit()
