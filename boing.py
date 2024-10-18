@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import io
+import math
 import pygame
 import random
 import struct
@@ -641,6 +642,13 @@ class Icon(pygame.Surface):
         pygame.transform.scale(self.timg, (32, 32), self)
 
 
+class ScanLines(pygame.Surface):
+    def __init__(self, width, height, spacing=2, intensity=32):
+        pygame.Surface.__init__(self, (width, height), pygame.SRCALPHA)
+        for y in range(0, height, spacing):
+            pygame.draw.line(self, (0, 0, 0, intensity), (0, y), (width, y))
+
+
 class Sound:
     def __init__(self, samplefile: str):
         self.sound = None
@@ -682,17 +690,42 @@ class Workbench:
         DRAGGING_UP = auto()
 
     def __init__(self):
-        self.wb = pygame.image.load('wb.png')
-        self.state = self.State.FULL_UP
+        self.wb = None
+        
+        try:
+            self.wb = pygame.image.load('wb.png')
+            self.state = self.State.FULL_UP
+            self.countdown = 100
+            self.height_half = 100
+            self.height = 200
+            self.mouse_is_pressed = False
+        except Exception as ex:
+            print(f"Error loading workbench image: {ex}, running without workbench")
+
+    def mouse_pressed(self, mouse_pos):
+        self.mouse_is_pressed = True
+        self.mouse_motion(mouse_pos)
+
+    def mouse_released(self, mouse_pos):
+        self.mouse_is_pressed = False
+        self.mouse_motion(mouse_pos)
+        self.state = self.State.DRAGGING_DOWN
         self.countdown = 100
-        self.height_half = 100
-        self.height = 200
+
+    def mouse_motion(self, mouse_pos):
+        if self.mouse_is_pressed:
+            self.height = 200-mouse_pos[1]
+            if self.height > 200:
+                self.height = 200
 
     def update(self, screen):
+        if not self.wb:
+            return
+
         if self.countdown > 0:
             self.countdown -= 1
 
-        if self.countdown == 0:
+        if not self.mouse_is_pressed and self.countdown == 0:
             match self.state:
                 case self.State.FULL_UP:
                     self.state = self.State.DRAGGING_DOWN
@@ -728,22 +761,47 @@ def main():
     icon = Icon(ball)
     background = Background()
     wb = Workbench()
+    scanlines = ScanLines(background.get_width(), background.get_height())
+    boot_img = None
+    cursor = None
 
-    cursor_img = pygame.image.load("cursor.png")
-    cursor = pygame.cursors.Cursor((0, 0), cursor_img)
+    try:
+        boot_img = pygame.image.load("boot.png")
+    except Exception as ex:
+        print(f"Error loading boot image: {ex}")
+
+    try:
+        cursor_img = pygame.image.load("cursor.png")
+        cursor = pygame.cursors.Cursor((0, 0), cursor_img)
+    except Exception as ex:
+        print(f"Error loading cursor image: {ex}, using default cursor")
 
     screen = pygame.display.set_mode(size=(320, 200))
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
-    pygame.mouse.set_cursor(cursor)
+    if cursor:
+        pygame.mouse.set_cursor(cursor)
+
+    if boot_img:
+        screen.blit(boot_img, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        screen.blit(scanlines, (0, 0))
 
     fullscreen = False
+    scanlines_enabled = True
 
     while True:
         ticks1 = pygame.time.get_ticks()
         evt = pygame.event.poll()
         if evt.type == pygame.QUIT:
             break
+        elif evt.type == pygame.MOUSEBUTTONDOWN:
+            wb.mouse_pressed(evt.pos)
+        elif evt.type == pygame.MOUSEBUTTONUP:
+            wb.mouse_released(evt.pos)
+        elif evt.type == pygame.MOUSEMOTION:
+            wb.mouse_motion(evt.pos)
         elif evt.type == pygame.KEYDOWN:
             match evt.key:
                 case pygame.K_F11:
@@ -756,9 +814,12 @@ def main():
                         screen = pygame.display.set_mode(size=(320, 200))
                         pygame.display.set_caption('Boing')
                         pygame.display.set_icon(icon)
-                    pygame.mouse.set_cursor(cursor)
+                    if cursor:
+                        pygame.mouse.set_cursor(cursor)
                 case pygame.K_w:
                     wb.countdown = 0
+                case pygame.K_s:
+                    scanlines_enabled = not scanlines_enabled
                 case pygame.K_ESCAPE:
                     break
                 case pygame.K_q:
@@ -768,6 +829,9 @@ def main():
         screen.blit(ball, ball.get_position())
         screen.blit(ball.shadow, ball.get_position(), special_flags=pygame.BLEND_RGB_SUB)
         wb.update(screen)
+        if scanlines_enabled:
+            screen.blit(scanlines, (0, 0))
+
         pygame.display.flip()
 
         ticks2 = pygame.time.get_ticks()
