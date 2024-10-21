@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import io
-import math
 import pygame
 import random
 import struct
@@ -484,7 +483,7 @@ class Ball(pygame.Surface):
         pygame.Surface.__init__(self, (BALL_WIDTH, BALL_HEIGHT), depth=8)
         self.set_colorkey(0)
 
-        # lets construct pygames chunky image from Amigas planar data
+        # let's construct pygames chunky image from Amigas planar data
         pxarray = pygame.PixelArray(self)
         oneplanelen = BALL_WIDTH * BALL_HEIGHT // 16
         for y in range(BALL_HEIGHT):
@@ -577,7 +576,7 @@ class Ball(pygame.Surface):
             # If so, bounce back the other way.
             self.x_scroll=-self.x_scroll
             # ...and make the bouncing sound.
-            self.sound.play(160,40,(self.x_pos+95)/190.)
+            self.sound.play(160, 40, (self.x_pos+95)/190.)
         # We want the ball to move faster near the bottom of the screen to
         # achieve a realistic-looking bouncing motion. The adjusted_y_scroll
         # variable accomplishes that.
@@ -608,7 +607,7 @@ class Ball(pygame.Surface):
         # viewport moved around
         # as we move the ball we have to reverse the directions and add some
         # offset to x (half ball width)
-        return (-self.x_pos+77, -self.y_pos)
+        return -self.x_pos+77, -self.y_pos
 
 
 class Background(pygame.Surface):
