@@ -790,8 +790,9 @@ def main():
     fullscreen = False
     scanlines_enabled = True
 
+    clock = pygame.time.Clock()
+
     while True:
-        ticks1 = pygame.time.get_ticks()
         evt = pygame.event.poll()
         if evt.type == pygame.QUIT:
             break
@@ -833,8 +834,7 @@ def main():
 
         pygame.display.flip()
 
-        ticks2 = pygame.time.get_ticks()
-        pygame.time.wait(max(0, 20 - (ticks2 - ticks1)))
+        clock.tick(50)
 
     pygame.mixer.quit()
     pygame.quit()
