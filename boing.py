@@ -10,7 +10,7 @@ import sys
 from enum import Enum, auto
 
 
-# boing.py written by Thomas Runge (tom@truwo.de) in January 2016
+# boing.py written by Thomas Runge (tom@truwo.de) in January 2016/2024.
 #
 # This is a re-implementation of the famous Amiga-Boing-Demo in Python
 # using the pygame extension.
