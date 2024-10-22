@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import asyncio
 import io
+import platform
 import pygame
 import random
 import struct
@@ -649,23 +651,27 @@ class ScanLines(pygame.Surface):
 
 
 class Sound:
-    def __init__(self, samplefile: str):
+    def __init__(self):
         self.sound = None
         self.channel = None
 
         try:
-            # put Amigas signed-integer, 8bit, 28867Hz sample rate raw audio
-            # into a wav file format, as pygame supports no raw audio
-            with open(samplefile, "rb") as fp:
-                raw = bytearray(fp.read())
-            for offset in range(len(raw)):
-                raw_signed_bytes = struct.unpack_from(">b", raw, offset)
-                struct.pack_into("<B", raw, offset, raw_signed_bytes[0]+128)
-            wav_header = struct.pack('<4sL4s4sLHHLLHH4sL', b'RIFF',
-                    36 + len(raw), b'WAVE', b'fmt ', 16,
-                    0x0001, 1, 28867, 28867, 1, 8, b'data', len(raw))
-            wav = wav_header + raw
-            self.sound = pygame.mixer.Sound(file=io.BytesIO(wav))
+            if sys.platform == "emscripten":
+                # no WAV in pygbag, some cheating here
+                self.sound = pygame.mixer.Sound("boing.ogg")
+            else:
+                # put Amigas signed-integer, 8bit, 28867Hz sample rate raw audio
+                # into a wav file format, as pygame supports no raw audio
+                with open("boing.samples", "rb") as fp:
+                    raw = bytearray(fp.read())
+                for offset in range(len(raw)):
+                    raw_signed_bytes = struct.unpack_from(">b", raw, offset)
+                    struct.pack_into("<B", raw, offset, raw_signed_bytes[0]+128)
+                wav_header = struct.pack('<4sL4s4sLHHLLHH4sL', b'RIFF',
+                        36 + len(raw), b'WAVE', b'fmt ', 16,
+                        0x0001, 1, 28867, 28867, 1, 8, b'data', len(raw))
+                wav = wav_header + raw
+                self.sound = pygame.mixer.Sound(file=io.BytesIO(wav))
             self.channel = pygame.mixer.find_channel()
         except Exception as ex:
             print(f"Error loading sound: {ex}, running without sound")
@@ -753,9 +759,13 @@ class Workbench:
             screen.blit(self.wb, (0, 200-self.height))
 
 
-def main():
+async def main():
     pygame.init()
-    sound = Sound("boing.samples")
+    if sys.platform == "emscripten":
+        platform.window.canvas.style.imageRendering = "pixelated"
+        platform.document.body.style.background = "#666666"
+
+    sound = Sound()
     ball = Ball(sound)
     icon = Icon(ball)
     background = Background()
@@ -832,13 +842,13 @@ def main():
         if scanlines_enabled:
             screen.blit(scanlines, (0, 0))
 
-        pygame.display.flip()
-
+        pygame.display.update()
         clock.tick(50)
+        await asyncio.sleep(0)
 
     pygame.mixer.quit()
     pygame.quit()
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
