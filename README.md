@@ -26,7 +26,9 @@ This reimplementation is largely based on the C version created by Jimmy Maher, 
 
 ## Getting Started
 
-To run this Amiga Boing Demo Python reimplementation, follow these steps:
+To quickly check the demo in your browser (thanks to [pygbag](https://pygame-web.github.io/wiki/pygbag/)), just go to [https://thomasrunge.github.io/boing](https://thomasrunge.github.io/boing).
+
+To want run this Amiga Boing Demo Python reimplementation on your computer, follow these steps:
 
 1. **Install Git**: 
    - Download and install Git from [https://git-scm.com/downloads](https://git-scm.com/downloads)
