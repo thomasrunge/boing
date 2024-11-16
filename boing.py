@@ -771,31 +771,35 @@ async def main():
     background = Background()
     wb = Workbench()
     scanlines = ScanLines(background.get_width(), background.get_height())
-    boot_img = None
     cursor = None
-
-    try:
-        boot_img = pygame.image.load("boot.png")
-    except Exception as ex:
-        print(f"Error loading boot image: {ex}")
+    guru_img = None
 
     try:
         cursor_img = pygame.image.load("cursor.png")
         cursor = pygame.cursors.Cursor((0, 0), cursor_img)
+        pygame.mouse.set_cursor(cursor)
     except Exception as ex:
         print(f"Error loading cursor image: {ex}, using default cursor")
+
+    try:
+        guru_img = pygame.image.load("guru.png")
+    except Exception as ex:
+        print(f"Error loading guru image: {ex}, will not show guru meditation at end")
 
     screen = pygame.display.set_mode(size=(320, 200))
     pygame.display.set_caption('Boing')
     pygame.display.set_icon(icon)
-    if cursor:
-        pygame.mouse.set_cursor(cursor)
 
-    if boot_img:
+    try:
+        boot_img = pygame.image.load("boot.png")
         screen.blit(boot_img, (0, 0))
-        pygame.display.flip()
-        pygame.time.wait(2000)
+        pygame.display.update()
         screen.blit(scanlines, (0, 0))
+        pygame.time.wait(2000)
+    except Exception as ex:
+        print(f"Error loading boot image: {ex}")
+
+    # TODO: load GURU image and show at end
 
     fullscreen = False
     scanlines_enabled = True
@@ -847,6 +851,12 @@ async def main():
         await asyncio.sleep(0)
 
     pygame.mixer.quit()
+
+    screen.blit(guru_img, (0, 0))
+    pygame.display.update()
+    screen.blit(scanlines, (0, 0))
+    pygame.time.wait(1000)
+
     pygame.quit()
 
 
